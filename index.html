@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Potvrdi</title>
+<meta name="description" content="Potvrdi — Viber potvrde, podsetnici i zakazivanje za platforme za zakazivanje termina u Srbiji. Jedan API poziv umesto SMS-a.">
+<meta property="og:title" content="Potvrdi — Viber potvrde i podsetnici za platforme za zakazivanje">
+<meta property="og:description" content="Klijent potvrđuje ili otkazuje termin jednim dugmetom u Viberu. Integracija je jedan HTTP poziv.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://potvrdi.rs/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234F3BC9'/%3E%3Cpath d='M18 33l10 10 18-20' fill='none' stroke='%23fff' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --bg-2: #F1F0EA;
+    --ink: #15171F;
+    --ink-2: #4B4E5C;
+    --ink-3: #7C8091;
+    --line: #DCDBD3;
+    --accent: #4F3BC9;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #ECE9FA;
+    --ok: #1F9D55;
+    --ok-soft: #E3F5EA;
+    --no: #B94A48;
+    --no-soft: #F8E7E6;
+    --bubble: #FFFFFF;
+    --phone: #1B1D27;
+    --code-bg: #15171F;
+    --code-ink: #E8E6F5;
+    --shadow: 0 24px 60px -24px rgba(21,23,31,.35);
+    --display: "Sora", "Segoe UI", system-ui, sans-serif;
+    --body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1117; --bg-2: #171A23; --ink: #ECEBF3; --ink-2: #B9BAC8; --ink-3: #7F8296;
+      --line: #2A2D3A; --accent: #8C7DF0; --accent-ink: #0F1117; --accent-soft: #221F3D;
+      --ok: #3FCB7C; --ok-soft: #123A24; --no: #E07472; --no-soft: #3B1F1F;
+      --bubble: #1E2130; --phone: #05060A; --code-bg: #05060A; --code-ink: #E8E6F5;
+      --shadow: 0 24px 60px -24px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1117; --bg-2: #171A23; --ink: #ECEBF3; --ink-2: #B9BAC8; --ink-3: #7F8296;
+    --line: #2A2D3A; --accent: #8C7DF0; --accent-ink: #0F1117; --accent-soft: #221F3D;
+    --ok: #3FCB7C; --ok-soft: #123A24; --no: #E07472; --no-soft: #3B1F1F;
+    --bubble: #1E2130; --phone: #05060A; --code-bg: #05060A; --code-ink: #E8E6F5;
+    --shadow: 0 24px 60px -24px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--body); font-size: 17px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  .wrap { max-width: 1120px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
+  h1, h2, h3 { font-family: var(--display); letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2.1rem, 5.2vw, 3.6rem); line-height: 1.05; font-weight: 700; }
+  h2 { font-size: clamp(1.5rem, 3vw, 2.1rem); line-height: 1.15; font-weight: 600; }
+  h3 { font-size: 1.1rem; font-weight: 600; }
+  p { margin: 0; }
+  .lead { font-size: 1.15rem; color: var(--ink-2); max-width: 34em; }
+  .eyebrow { font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; color: var(--accent); font-weight: 600; }
+  .muted { color: var(--ink-3); }
+  .btn {
+    display: inline-flex; align-items: center; gap: .5em; padding: .8em 1.3em; border-radius: 999px;
+    font-weight: 600; text-decoration: none; font-size: 1rem; border: 1.5px solid transparent; cursor: pointer;
+    font-family: var(--body); transition: transform .12s ease, background .12s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-ghost { border-color: var(--line); color: var(--ink); background: transparent; }
+  .btn-ghost:hover { background: var(--bg-2); }
+
+  /* header */
+  header.site { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header.site .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 1.15rem; text-decoration: none; letter-spacing: -.01em; }
+  .logo svg { width: 28px; height: 28px; }
+  nav.top { display: flex; align-items: center; gap: 18px; font-size: .95rem; }
+  nav.top a { text-decoration: none; color: var(--ink-2); }
+  nav.top a:hover { color: var(--ink); }
+  .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .lang button { background: transparent; border: 0; padding: 6px 12px; font: inherit; font-size: .85rem; font-weight: 600; color: var(--ink-3); cursor: pointer; }
+  .lang button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  @media (max-width: 720px) { nav.top .hide-m { display: none; } }
+
+  /* hero */
+  .hero { padding-block: clamp(48px, 8vw, 96px) clamp(40px, 6vw, 72px); }
+  .hero .wrap { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
+  .hero-copy { display: grid; gap: 22px; }
+  .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .hero-note { font-size: .9rem; color: var(--ink-3); }
+  @media (max-width: 860px) { .hero .wrap { grid-template-columns: 1fr; } }
+
+  /* phone mock */
+  .phone { position: relative; margin-inline: auto; width: min(100%, 340px); aspect-ratio: 9 / 17.5; max-width: 100%; background: var(--phone); border-radius: 44px; padding: 14px; box-shadow: var(--shadow); }
+  .screen { width: 100%; height: 100%; border-radius: 32px; background: var(--bg-2); overflow: hidden; display: flex; flex-direction: column; }
+  .chat-top { display: flex; align-items: center; gap: 10px; padding: 18px 16px 12px; background: var(--bubble); border-bottom: 1px solid var(--line); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-family: var(--display); font-weight: 700; font-size: .9rem; }
+  .chat-top b { display: block; font-size: .92rem; line-height: 1.2; }
+  .chat-top small { font-size: .72rem; color: var(--ok); font-weight: 600; }
+  .chat { padding: 14px 12px; display: grid; gap: 10px; align-content: start; flex: 1; }
+  .bubble { background: var(--bubble); border-radius: 16px 16px 16px 4px; padding: 10px 12px; font-size: .84rem; line-height: 1.45; max-width: 92%; box-shadow: 0 1px 0 rgba(0,0,0,.04); }
+  .bubble time { display: block; font-size: .68rem; color: var(--ink-3); margin-top: 6px; }
+  .bubble.me { background: var(--accent-soft); border-radius: 16px 16px 4px 16px; justify-self: end; }
+  .kb { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kb span { display: block; text-align: center; padding: 11px 8px; border-radius: 10px; font-weight: 600; font-size: .84rem; }
+  .kb .yes { background: var(--ok); color: #fff; }
+  .kb .no { background: var(--bubble); color: var(--no); border: 1px solid var(--line); }
+  .kb .wide { grid-column: 1 / -1; background: var(--accent); color: var(--accent-ink); }
+  .typing { display: inline-flex; gap: 4px; padding: 10px 12px; background: var(--bubble); border-radius: 16px 16px 16px 4px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25 } 40% { opacity: 1 } }
+  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; } }
+
+  /* sections */
+  section { padding-block: clamp(48px, 7vw, 88px); }
+  section.alt { background: var(--bg-2); }
+  .sec-head { display: grid; gap: 12px; max-width: 42em; margin-bottom: clamp(28px, 4vw, 44px); }
+
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; counter-reset: step; }
+  .step { display: grid; gap: 10px; padding-top: 18px; border-top: 2px solid var(--ink); }
+  .step::before { counter-increment: step; content: counter(step, decimal-leading-zero); font-family: var(--mono); font-size: .85rem; color: var(--ink-3); }
+  .step p { color: var(--ink-2); font-size: .98rem; }
+  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+
+  .for { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .for div { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); display: grid; gap: 6px; }
+  .for div b { font-family: var(--display); font-weight: 600; }
+  .for div span { color: var(--ink-2); font-size: .95rem; }
+  @media (max-width: 760px) { .for { grid-template-columns: 1fr; } }
+
+  .cmp-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+  table.cmp { width: 100%; border-collapse: collapse; min-width: 560px; font-size: .97rem; }
+  table.cmp th, table.cmp td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cmp thead th { font-family: var(--display); font-weight: 600; font-size: .9rem; background: var(--bg-2); }
+  table.cmp tbody tr:last-child td { border-bottom: 0; }
+  table.cmp td:first-child { color: var(--ink-2); width: 34%; }
+  .yes-mark { color: var(--ok); font-weight: 600; }
+  .no-mark { color: var(--ink-3); }
+
+  .integr { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(24px, 4vw, 48px); align-items: start; }
+  @media (max-width: 860px) { .integr { grid-template-columns: 1fr; } }
+  pre.code { margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 14px; padding: 20px 22px; font-family: var(--mono); font-size: .84rem; line-height: 1.6; overflow-x: auto; }
+  pre.code .k { color: #9DD4FF; } pre.code .s { color: #C3F0A6; } pre.code .c { color: #8A8FA8; }
+  .integr ul { margin: 0; padding-left: 1.1em; color: var(--ink-2); display: grid; gap: 8px; }
+
+  .pilot { border: 1.5px solid var(--accent); border-radius: 20px; padding: clamp(24px, 4vw, 40px); display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: center; background: var(--bg); }
+  .pilot .terms { display: grid; gap: 10px; color: var(--ink-2); font-size: .98rem; }
+  .pilot .terms div::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+  @media (max-width: 760px) { .pilot { grid-template-columns: 1fr; } }
+
+  footer.site { border-top: 1px solid var(--line); padding-block: 32px; font-size: .92rem; color: var(--ink-3); }
+  footer.site .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+  footer.site a { color: var(--ink-2); text-decoration: none; }
+  footer.site a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="#">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="var(--accent)"/><path d="M18 33l10 10 18-20" fill="none" stroke="var(--accent-ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Potvrdi
+    </a>
+    <nav class="top">
+      <a class="hide-m" href="#kako" data-i="nav_how">Kako radi</a>
+      <a class="hide-m" href="#zasto" data-i="nav_why">Zašto Viber</a>
+      <a class="hide-m" href="#api" data-i="nav_api">Integracija</a>
+      <div class="lang" role="group" aria-label="Jezik / Language">
+        <button type="button" id="lang-sr" aria-pressed="true" onclick="setLang('sr')">SR</button>
+        <button type="button" id="lang-en" aria-pressed="false" onclick="setLang('en')">EN</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="eyebrow" data-i="hero_eyebrow">Za platforme za zakazivanje termina</span>
+        <h1 data-i="hero_h1">Klijent potvrđuje termin jednim dugmetom. U Viberu.</h1>
+        <p class="lead" data-i="hero_lead">Potvrdi šalje potvrde i podsetnike vaših korisnika kroz Viber umesto SMS-a — sa dugmetom „Potvrdi“ ili „Otkaži“, bez poziva i bez instaliranja aplikacije. Vaša platforma dodaje jedan API poziv; sve ostalo radi Potvrdi.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="mailto:prem@potvrdi.rs?subject=Pilot%20Potvrdi" data-i="hero_cta1">Prijavite se za pilot</a>
+          <a class="btn btn-ghost" href="#kako" data-i="hero_cta2">Kako radi</a>
+        </div>
+        <p class="hero-note" data-i="hero_note">Prve tri platforme: besplatna integracija i tri meseca poruka bez naknade.</p>
+      </div>
+
+      <div class="phone" aria-label="Primer Viber razgovora">
+        <div class="screen">
+          <div class="chat-top">
+            <div class="avatar">S</div>
+            <div><b data-i="chat_name">Salon Nina · Vračar</b><small data-i="chat_status">Verifikovan poslovni nalog</small></div>
+          </div>
+          <div class="chat">
+            <div class="bubble">
+              <span data-i="chat_b1">Zdravo Marija! Podsećamo: <b>šišanje i feniranje</b> sutra, <b>utorak 14:30</b>, kod Jelene. Vidimo se?</span>
+              <time>09:00</time>
+            </div>
+            <div class="kb" aria-hidden="true">
+              <span class="yes" data-i="chat_yes">Potvrdi</span>
+              <span class="no" data-i="chat_no">Otkaži</span>
+              <span class="wide" data-i="chat_re">Pomeri termin</span>
+            </div>
+            <div class="bubble me"><span data-i="chat_b2">Potvrđujem ✓</span><time>09:03</time></div>
+            <div class="bubble"><span data-i="chat_b3">Super, termin je potvrđen. Hvala!</span><time>09:03</time></div>
+            <div class="typing" aria-hidden="true"><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="kako" class="alt">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" data-i="how_eyebrow">Kako radi</span>
+        <h2 data-i="how_h2">Tri koraka, nijedan na strani vašeg tima za podršku</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3 data-i="how_1h">Vaša platforma pošalje događaj</h3>
+          <p data-i="how_1p">Nova rezervacija, podsetnik 24h ili 2h pre termina, otkazivanje — jedan HTTP poziv sa brojem telefona klijenta i detaljima termina. Isto što danas šaljete SMS provajderu.</p>
+        </div>
+        <div class="step">
+          <h3 data-i="how_2h">Potvrdi bira kanal i šalje</h3>
+          <p data-i="how_2p">Viber poruka sa dugmićima za klijente koji su na Viberu, SMS fallback za ostale. Isporuku i pročitano pratite u realnom vremenu.</p>
+        </div>
+        <div class="step">
+          <h3 data-i="how_3h">Klijent odgovori dugmetom</h3>
+          <p data-i="how_3p">„Potvrdi“, „Otkaži“ ili „Pomeri termin“ — odgovor stiže kao webhook nazad u vašu platformu i kalendar salona se sam ažurira. Bez poziva u salon.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" data-i="for_eyebrow">Za koga</span>
+        <h2 data-i="for_h2">Softver koji već šalje podsetnike — samo mu treba bolji kanal</h2>
+      </div>
+      <div class="for">
+        <div><b data-i="for_1b">Platforme za zakazivanje</b><span data-i="for_1s">Frizerski i kozmetički saloni, berbernice, masaža, fitnes. Potvrde i podsetnici za hiljade salona kroz jednu integraciju.</span></div>
+        <div><b data-i="for_2b">Softver za ordinacije</b><span data-i="for_2s">Stomatološke i privatne ordinacije: potvrda pregleda, podsetnik za kontrolu na šest meseci, poziv na vakcinaciju kod veterinara.</span></div>
+        <div><b data-i="for_3b">Auto: tehnički pregled i servis</b><span data-i="for_3s">Podsetnik da registracija ističe za 30 dana — sa dugmetom „Zakaži tehnički pregled“ umesto obične SMS poruke.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="zasto" class="alt">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" data-i="why_eyebrow">Zašto Viber, a ne SMS</span>
+        <h2 data-i="why_h2">Cena poruke je slična. Sve ostalo nije.</h2>
+        <p class="lead" data-i="why_lead">Viber je najrasprostranjeniji messenger u Srbiji — ima ga svaki klijent vašeg salona. SMS može samo da obavesti; Viber može da dobije odgovor.</p>
+      </div>
+      <div class="cmp-wrap">
+        <table class="cmp">
+          <thead><tr><th></th><th>SMS</th><th>Viber (Potvrdi)</th></tr></thead>
+          <tbody>
+            <tr><td data-i="cmp_1">Dugmad „Potvrdi“ / „Otkaži“</td><td class="no-mark">—</td><td class="yes-mark" data-i="cmp_yes1">Da</td></tr>
+            <tr><td data-i="cmp_2">Odgovor klijenta</td><td class="no-mark" data-i="cmp_2a">Nema, ili poziv u salon</td><td class="yes-mark" data-i="cmp_2b">Webhook u vašu platformu</td></tr>
+            <tr><td data-i="cmp_3">Odgovori u roku od 24h</td><td class="no-mark" data-i="cmp_3a">Svaka poruka se plaća</td><td class="yes-mark" data-i="cmp_3b">Besplatni</td></tr>
+            <tr><td data-i="cmp_4">Status isporuke i pročitano</td><td class="no-mark" data-i="cmp_4a">Samo isporučeno</td><td class="yes-mark" data-i="cmp_4b">Isporučeno i pročitano</td></tr>
+            <tr><td data-i="cmp_5">Ime i logo pošiljaoca</td><td class="no-mark" data-i="cmp_5a">Kratak alfanumerički ID</td><td class="yes-mark" data-i="cmp_5b">Verifikovan nalog sa logom</td></tr>
+            <tr><td data-i="cmp_6">Zakazivanje novog termina</td><td class="no-mark" data-i="cmp_6a">Link na sajt</td><td class="yes-mark" data-i="cmp_6b">U istom razgovoru</td></tr>
+            <tr><td data-i="cmp_7">Klijenti bez Vibera</td><td class="yes-mark" data-i="cmp_7a">SMS</td><td class="yes-mark" data-i="cmp_7b">Automatski SMS fallback</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="api">
+    <div class="wrap">
+      <div class="integr">
+        <div class="sec-head" style="margin-bottom:0">
+          <span class="eyebrow" data-i="api_eyebrow">Integracija</span>
+          <h2 data-i="api_h2">Jedan poziv za slanje, jedan webhook za odgovor</h2>
+          <p class="lead" data-i="api_lead">Napravljeno tako da programer vaše platforme završi integraciju za jedan dan.</p>
+          <ul>
+            <li data-i="api_l1">REST API sa OpenAPI specifikacijom i primerima</li>
+            <li data-i="api_l2">Tipovi događaja: <code>booking_confirmed</code>, <code>reminder</code>, <code>cancelled</code>, <code>reschedule_offer</code></li>
+            <li data-i="api_l3">Više salona (pod-naloga) pod jednim API ključem, svaki sa svojim imenom pošiljaoca</li>
+            <li data-i="api_l4">Webhook sa potpisom za odgovore i statuse isporuke</li>
+            <li data-i="api_l5">Podaci ostaju u EU; GDPR i Zakon o zaštiti podataka o ličnosti</li>
+          </ul>
+        </div>
+<pre class="code"><code><span class="c"># podsetnik 24h pre termina</span>
+<span class="k">POST</span> https://api.potvrdi.rs/v1/messages
+<span class="k">Authorization:</span> Bearer &lt;api_key&gt;
+
+{
+  <span class="s">"type"</span>: <span class="s">"reminder"</span>,
+  <span class="s">"tenant"</span>: <span class="s">"salon-nina"</span>,
+  <span class="s">"to"</span>: { <span class="s">"phone"</span>: <span class="s">"+38164xxxxxxx"</span> },
+  <span class="s">"booking"</span>: {
+    <span class="s">"id"</span>: <span class="s">"bk_18342"</span>,
+    <span class="s">"service"</span>: <span class="s">"Šišanje i feniranje"</span>,
+    <span class="s">"staff"</span>: <span class="s">"Jelena"</span>,
+    <span class="s">"starts_at"</span>: <span class="s">"2026-10-06T14:30:00+02:00"</span>
+  },
+  <span class="s">"actions"</span>: [<span class="s">"confirm"</span>, <span class="s">"cancel"</span>, <span class="s">"reschedule"</span>],
+  <span class="s">"fallback"</span>: <span class="s">"sms"</span>
+}
+
+<span class="c"># odgovor klijenta stiže na vaš webhook</span>
+{ <span class="s">"booking_id"</span>: <span class="s">"bk_18342"</span>, <span class="s">"action"</span>: <span class="s">"confirm"</span>,
+  <span class="s">"channel"</span>: <span class="s">"viber"</span>, <span class="s">"at"</span>: <span class="s">"2026-10-05T09:03:11+02:00"</span> }</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="pilot">
+    <div class="wrap">
+      <div class="pilot">
+        <div style="display:grid;gap:14px">
+          <span class="eyebrow" data-i="pilot_eyebrow">Pilot program</span>
+          <h2 data-i="pilot_h2">Tražimo prve tri platforme</h2>
+          <p class="lead" data-i="pilot_lead">Gradimo Potvrdi zajedno sa platformama koje već šalju podsetnike. Vi birate nekoliko salona za pilot, mi radimo integraciju i merimo rezultat: isporuku, odgovore i propuštene termine pre i posle.</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="mailto:prem@potvrdi.rs?subject=Pilot%20Potvrdi" data-i="pilot_cta">Pišite nam: prem@potvrdi.rs</a>
+          </div>
+        </div>
+        <div class="terms">
+          <div data-i="pilot_t1">Integracija besplatna</div>
+          <div data-i="pilot_t2">Tri meseca poruka bez naknade</div>
+          <div data-i="pilot_t3">Bez ugovorne obaveze posle pilota</div>
+          <div data-i="pilot_t4">Izveštaj sa brojkama koje možete pokazati salonima</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© 2026 Potvrdi · Beograd</span>
+    <span><a href="mailto:prem@potvrdi.rs">prem@potvrdi.rs</a> · <a href="https://www.linkedin.com/company/potvrdi" rel="noopener">LinkedIn</a></span>
+    <span class="muted" data-i="foot_note">Potvrdi nije povezan sa kompanijom Rakuten Viber. Viber je zaštićeni znak svog vlasnika.</span>
+  </div>
+</footer>
+
+<script>
+  const EN = {
+    nav_how: "How it works", nav_why: "Why Viber", nav_api: "Integration",
+    hero_eyebrow: "For appointment-booking platforms",
+    hero_h1: "Your client confirms the appointment with one tap. In Viber.",
+    hero_lead: "Potvrdi sends your users' confirmations and reminders through Viber instead of SMS — with a “Confirm” or “Cancel” button, no phone call, no app to install. Your platform adds one API call; Potvrdi does the rest.",
+    hero_cta1: "Apply for the pilot", hero_cta2: "How it works",
+    hero_note: "First three platforms: free integration and three months of messages at no charge.",
+    chat_name: "Salon Nina · Vračar", chat_status: "Verified business account",
+    chat_b1: "Hi Marija! Reminder: <b>cut &amp; blow-dry</b> tomorrow, <b>Tuesday 14:30</b>, with Jelena. See you?",
+    chat_yes: "Confirm", chat_no: "Cancel", chat_re: "Reschedule", chat_b2: "Confirmed ✓", chat_b3: "Great, your appointment is confirmed. Thank you!",
+    how_eyebrow: "How it works", how_h2: "Three steps, none of them for your support team",
+    how_1h: "Your platform sends an event", how_1p: "New booking, reminder 24h or 2h before, cancellation — one HTTP call with the client's phone number and the booking details. The same thing you send to your SMS provider today.",
+    how_2h: "Potvrdi picks the channel and sends", how_2p: "A Viber message with buttons for clients on Viber, SMS fallback for the rest. Delivery and read status in real time.",
+    how_3h: "The client answers with a button", how_3p: "“Confirm”, “Cancel” or “Reschedule” — the answer comes back to your platform as a webhook and the salon's calendar updates itself. No calls to the salon.",
+    for_eyebrow: "Who it's for", for_h2: "Software that already sends reminders — it just needs a better channel",
+    for_1b: "Booking platforms", for_1s: "Hair and beauty salons, barbershops, massage, fitness. Confirmations and reminders for thousands of salons through one integration.",
+    for_2b: "Practice-management software", for_2s: "Dental and private practices: visit confirmation, six-month check-up reminder, vaccination call at the vet.",
+    for_3b: "Automotive: inspection and service", for_3s: "A reminder that the registration expires in 30 days — with a “Book an inspection” button instead of a plain SMS.",
+    why_eyebrow: "Why Viber, not SMS", why_h2: "The price per message is similar. Everything else isn't.",
+    why_lead: "Viber is the most widely used messenger in Serbia — every one of your salons' clients has it. SMS can only notify; Viber can get an answer.",
+    cmp_1: "“Confirm” / “Cancel” buttons", cmp_yes1: "Yes",
+    cmp_2: "Client's reply", cmp_2a: "None, or a call to the salon", cmp_2b: "Webhook to your platform",
+    cmp_3: "Replies within 24h", cmp_3a: "Every message is billed", cmp_3b: "Free",
+    cmp_4: "Delivery and read status", cmp_4a: "Delivered only", cmp_4b: "Delivered and read",
+    cmp_5: "Sender name and logo", cmp_5a: "Short alphanumeric ID", cmp_5b: "Verified account with logo",
+    cmp_6: "Booking a new appointment", cmp_6a: "Link to a website", cmp_6b: "In the same conversation",
+    cmp_7: "Clients without Viber", cmp_7a: "SMS", cmp_7b: "Automatic SMS fallback",
+    api_eyebrow: "Integration", api_h2: "One call to send, one webhook for the answer",
+    api_lead: "Built so that one developer on your side finishes the integration in a day.",
+    api_l1: "REST API with an OpenAPI spec and examples",
+    api_l2: "Event types: <code>booking_confirmed</code>, <code>reminder</code>, <code>cancelled</code>, <code>reschedule_offer</code>",
+    api_l3: "Multiple salons (sub-accounts) under one API key, each with its own sender name",
+    api_l4: "Signed webhooks for replies and delivery statuses",
+    api_l5: "Data stays in the EU; GDPR and the Serbian Personal Data Protection Act",
+    pilot_eyebrow: "Pilot program", pilot_h2: "Looking for the first three platforms",
+    pilot_lead: "We're building Potvrdi together with platforms that already send reminders. You pick a few salons for the pilot, we do the integration and measure the result: delivery, replies and no-shows before and after.",
+    pilot_cta: "Write to us: prem@potvrdi.rs",
+    pilot_t1: "Integration is free", pilot_t2: "Three months of messages at no charge", pilot_t3: "No commitment after the pilot", pilot_t4: "A report with numbers you can show your salons",
+    foot_note: "Potvrdi is not affiliated with Rakuten Viber. Viber is a trademark of its owner."
+  };
+  const SR = {};
+  document.querySelectorAll("[data-i]").forEach(el => { SR[el.dataset.i] = el.innerHTML; });
+
+  function setLang(l) {
+    const dict = l === "en" ? EN : SR;
+    document.querySelectorAll("[data-i]").forEach(el => { if (dict[el.dataset.i] !== undefined) el.innerHTML = dict[el.dataset.i]; });
+    document.documentElement.lang = l;
+    document.getElementById("lang-sr").setAttribute("aria-pressed", String(l === "sr"));
+    document.getElementById("lang-en").setAttribute("aria-pressed", String(l === "en"));
+    try { localStorage.setItem("potvrdi-lang", l); } catch (e) {}
+  }
+  try {
+    const saved = localStorage.getItem("potvrdi-lang");
+    if (saved === "en") setLang("en");
+    else if (!saved && !/^sr|^hr|^bs|^sh/.test(navigator.language || "")) setLang("en");
+  } catch (e) {}
+</script>
+</body>
+</html>
